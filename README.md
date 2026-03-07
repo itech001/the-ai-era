@@ -4,7 +4,7 @@
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-222?logo=github)](https://itech001.github.io/the-ai-era/)
 [![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel)](https://the-ai-era.vercel.app)
-[![Update Frequency](https://img.shields.io/badge/Update-30%20min-blue)](.github/workflows/update-news.yml)
+[![Update Frequency](https://img.shields.io/badge/Update-Daily%206:30%20AM-blue)](.github/workflows/update-news.yml)
 
 ## 特性
 

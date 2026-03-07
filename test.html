@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Data Loading</title>
+</head>
+<body>
+    <h1>Testing Data Loading</h1>
+    <div id="status">Loading...</div>
+    <div id="info"></div>
+    <script>
+        async function testData() {
+            const status = document.getElementById('status');
+            const info = document.getElementById('info');
+
+            try {
+                console.log('Starting fetch...');
+                status.textContent = 'Fetching data/latest-24h.json...';
+
+                const response = await fetch('./data/latest-24h.json');
+                console.log('Response:', response);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                status.textContent = 'Parsing JSON...';
+                const data = await response.json();
+                console.log('Data loaded:', data);
+
+                status.textContent = '✅ Success!';
+                info.innerHTML = `
+                    <p>Total items: ${data.total_items}</p>
+                    <p>Sites: ${data.site_count}</p>
+                    <p>Generated: ${data.generated_at}</p>
+                    <p>First 3 items:</p>
+                    <pre>${JSON.stringify(data.items.slice(0, 3), null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                status.textContent = '❌ Error: ' + error.message;
+                info.innerHTML = `<p style="color: red;">${error.message}</p>`;
+            }
+        }
+
+        testData();
+    </script>
+</body>
+</html>
