@@ -1842,12 +1842,39 @@ def normalize_source_for_display(site_id: str, source: str, url: str) -> str:
         if host.startswith("www."):
             host = host[4:]
         return host or "未分区"
-    if site_id == "buzzing" and src.lower() == "buzzing":
-        host = host_of_url(url)
-        if host.startswith("www."):
-            host = host[4:]
-        return host or src
-    return src
+
+    # Remove content in parentheses and brackets
+    src = re.sub(r'[（\(][^）\)]*[）\)]', '', src)
+    src = src.strip()
+
+    # If source is multi-segmented (separated by ·, space, or -), keep only first segment
+    for sep in ['·', ' ', '-', '|', '/']:
+        if sep in src:
+            src = src.split(sep)[0].strip()
+            break
+
+    # If source is a URL, extract domain and simplify
+    if '/' in src or '.' in src:
+        # Extract hostname from URL
+        if '://' in src:
+            try:
+                from urllib.parse import urlparse
+                parsed = urlparse(src)
+                src = parsed.netloc or src
+            except:
+                pass
+
+        # Remove www. prefix
+        if src.startswith('www.'):
+            src = src[4:]
+
+        # Remove common TLD
+        for tld in ['.com', '.org', '.net', '.io', '.dev', '.app', '.co', '.uk']:
+            if src.endswith(tld):
+                src = src[:-len(tld)]
+                break
+
+    return src or source
 
 
 def is_ai_related_record(record: dict[str, Any]) -> bool:
@@ -2148,6 +2175,28 @@ def main() -> int:
     latest_items_all = normalize_aihubtoday_records(latest_items_all)
 
     latest_items_all.sort(key=lambda x: event_time(x) or datetime.min.replace(tzinfo=UTC), reverse=True)
+
+    # Remove duplicate items based on normalized title and URL
+    # Keep the first occurrence (earliest published_at)
+    seen_title_url: dict[str, dict[str, Any]] = {}
+    for item in latest_items_all:
+        # Normalize title for comparison - remove extra whitespace, lower case
+        title = str(item.get("title") or "").strip().lower()
+        url = item.get("url") or ""
+
+        # Create a key from title (skip very short titles)
+        if len(title) < 20:
+            # For short titles, use URL as the key
+            key = f"url:{url}"
+        else:
+            key = f"title:{title}"
+
+        if key not in seen_title_url:
+            seen_title_url[key] = item
+
+    latest_items_all = list(seen_title_url.values())
+    latest_items_all.sort(key=lambda x: event_time(x) or datetime.min.replace(tzinfo=UTC), reverse=True)
+
     latest_items = [record for record in latest_items_all if is_ai_related_record(record)]
     title_cache = load_title_zh_cache(title_cache_path)
     latest_items, latest_items_all, title_cache = add_bilingual_fields(
